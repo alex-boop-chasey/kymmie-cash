@@ -25,3 +25,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Lockfile omitted: npm optional-deps bug prunes Linux-only entries
+# (@emnapi/*), breaking `npm ci` on the Cloudflare Linux builder.
+# Without it, Cloudflare uses `npm install`, which resolves correctly.
+package-lock.json
