@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kymmie-cash",
+  "compatibility_date": "2025-01-01",
+  // Serve the built Vite SPA via Cloudflare Workers Static Assets.
+  // No Worker script is required for a purely static single-page app.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
