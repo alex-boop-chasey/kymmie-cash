@@ -8,6 +8,7 @@ import {
   SCATTER_PAY,
   SCATTER_FREE_SPINS,
   REEL_BANDS,
+  FREE_REEL_BANDS,
   WILD,
   SCATTER,
   ORB,
@@ -20,7 +21,7 @@ import {
   HOLD_CELLS,
   HOLD_LAND_P,
   JACKPOTS,
-  ORB_CASH_VALUES,
+  ORB_CASH_MULTS,
   ORB_TIER_WEIGHTS,
 } from './config';
 
@@ -82,14 +83,14 @@ function evaluateLine(lineSymbols: SymbolId[], betPerLine: number): Omit<LineWin
 }
 
 /**
- * Build a cash orb. Values are clean multiples of 100 credits and never less
- * than the current total bet.
+ * Build a cash orb. The value is a multiple of the current TOTAL bet, so coin
+ * amounts scale with the bet (higher bet → higher numbers on the coins). The
+ * smallest multiplier is 1×, so a coin is always worth at least the total bet.
  */
 function makeCashOrb(pos: number, totalBet: number): Orb {
-  const pick = weightedPick(ORB_CASH_VALUES).value;
-  const minVal = Math.max(100, Math.ceil(totalBet / 100) * 100);
-  const value = Math.max(pick, minVal);
-  return { pos, value, tier: 'cash', mult: Math.round((value / totalBet) * 10) / 10 };
+  const mult = weightedPick(ORB_CASH_MULTS).mult;
+  const value = Math.round(mult * totalBet);
+  return { pos, value, tier: 'cash', mult };
 }
 
 /** Build a feature orb (cash or a jackpot tier) landing during a respin. */
@@ -104,13 +105,16 @@ function makeFeatureOrb(pos: number, totalBet: number): Orb {
  * wins are evaluated up front — the animation is pure eye-candy that lands on
  * this predetermined result.
  */
-export function spin(betPerLine: number): SpinResult {
+export function spin(betPerLine: number, free = false): SpinResult {
   const totalBet = betPerLine * PAYLINES.length;
+
+  // Free spins use a reduced-scatter band set so retriggers stay rare.
+  const bands = free ? FREE_REEL_BANDS : REEL_BANDS;
 
   const stops: number[] = [];
   const columns: SymbolId[][] = [];
   for (let reel = 0; reel < REELS; reel++) {
-    const band = REEL_BANDS[reel];
+    const band = bands[reel];
     const stop = Math.floor(Math.random() * band.length);
     stops.push(stop);
     columns.push(visibleColumn(band, stop));
