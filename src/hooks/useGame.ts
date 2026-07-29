@@ -130,7 +130,7 @@ export function useGame() {
       setCredits((c) => c - totalBet);
     }
 
-    const res = engineSpin(betPerLine);
+    const res = engineSpin(betPerLine, free);
     resultRef.current = res;
     settledCount.current = 0;
     scatterSeenRef.current = 0;

@@ -47,20 +47,22 @@ export const JACKPOTS: Record<'mini' | 'minor' | 'major' | 'maxi' | 'super' | 'g
 
 /**
  * Cash-orb value multipliers (of TOTAL bet) with weights (small = common).
- * Anchoring to total bet keeps orb values consistent with the jackpots (which
- * also scale with total bet) — a plain orb is worth a fraction of a spin up to
- * a few spins, exactly like Dragon Link "cash on reel" values.
+ * A coin's credit value is `mult × totalBet`, so amounts scale with the bet —
+ * the higher the bet, the higher the numbers on the coins. Anchoring to total
+ * bet keeps orb values consistent with the jackpots (which also scale with
+ * total bet): a plain coin is worth ~1 spin up to a few tens of spins, exactly
+ * like Dragon Link "cash on reel" values.
  */
-export const ORB_CASH_VALUES: { value: number; weight: number }[] = [
-  { value: 100, weight: 40 },
-  { value: 200, weight: 26 },
-  { value: 300, weight: 15 },
-  { value: 400, weight: 9 },
-  { value: 500, weight: 5 },
-  { value: 800, weight: 2.5 },
-  { value: 1000, weight: 1.1 },
-  { value: 2000, weight: 0.5 },
-  { value: 5000, weight: 0.18 },
+export const ORB_CASH_MULTS: { mult: number; weight: number }[] = [
+  { mult: 1, weight: 40 },
+  { mult: 2, weight: 26 },
+  { mult: 3, weight: 15 },
+  { mult: 5, weight: 9 },
+  { mult: 8, weight: 5 },
+  { mult: 12, weight: 2.5 },
+  { mult: 20, weight: 1.1 },
+  { mult: 40, weight: 0.5 },
+  { mult: 100, weight: 0.18 },
 ];
 
 /** During respins, the tier an orb takes when it lands (grand only via full board). */
@@ -162,21 +164,32 @@ export const PAYLINES: number[][] = [
  * Per-reel weighted symbol pools. Rarer/high-value symbols appear less often.
  * Wild appears only on the 3 middle reels (classic pokie design); scatter on all.
  * Bands are generated once at module load from these weights.
+ *
+ * Two band sets are built: the base game uses REEL_WEIGHTS; the free-spins
+ * feature uses FREE_REEL_WEIGHTS, which is identical except the scatter
+ * (Kymmie) weight is much lower — so 3-Kymmie RETRIGGERS during free spins are
+ * a rare bonus rather than firing at the full base rate.
  */
 type Weight = Partial<Record<SymbolId, number>>;
 
 const REEL_WEIGHTS: Weight[] = [
   // Reel 1 (rare wild so the top jackpot is reachable) — bar folded into orb (money)
-  { cherry: 8, bell: 6, diamond: 6, cash: 5, coin: 4, seven: 2, wild: 1, scatter: 5, mystery: 3, orb: 15 },
+  { cherry: 8, bell: 6, diamond: 6, cash: 5, coin: 4, seven: 2, wild: 1, scatter: 3, mystery: 3, orb: 15 },
   // Reel 2 (wild) — bar folded into orb (money)
-  { cherry: 7, bell: 6, diamond: 5, cash: 5, coin: 4, seven: 2, wild: 2, scatter: 5, mystery: 3, orb: 14 },
+  { cherry: 7, bell: 6, diamond: 5, cash: 5, coin: 4, seven: 2, wild: 2, scatter: 3, mystery: 3, orb: 14 },
   // Reel 3 (wild) — the "money" reel, a touch richer — bar folded into orb (money)
-  { cherry: 6, bell: 5, diamond: 5, cash: 5, coin: 5, seven: 3, wild: 3, scatter: 5, mystery: 3, orb: 14 },
+  { cherry: 6, bell: 5, diamond: 5, cash: 5, coin: 5, seven: 3, wild: 3, scatter: 3, mystery: 3, orb: 14 },
   // Reel 4 (wild) — bar folded into orb (money)
-  { cherry: 7, bell: 6, diamond: 5, cash: 5, coin: 4, seven: 2, wild: 2, scatter: 5, mystery: 3, orb: 14 },
+  { cherry: 7, bell: 6, diamond: 5, cash: 5, coin: 4, seven: 2, wild: 2, scatter: 3, mystery: 3, orb: 14 },
   // Reel 5 (rare wild so the top jackpot is reachable) — bar folded into orb (money)
-  { cherry: 8, bell: 6, diamond: 6, cash: 5, coin: 4, seven: 2, wild: 1, scatter: 5, mystery: 3, orb: 15 },
+  { cherry: 8, bell: 6, diamond: 6, cash: 5, coin: 4, seven: 2, wild: 1, scatter: 3, mystery: 3, orb: 15 },
 ];
+
+/**
+ * Free-spins reel pools: the base weights with a far rarer scatter (Kymmie) so
+ * retriggers seldom happen once the feature is running.
+ */
+const FREE_REEL_WEIGHTS: Weight[] = REEL_WEIGHTS.map((w) => ({ ...w, scatter: 1 }));
 
 /**
  * Deterministic PRNG (mulberry32). The reel BAND LAYOUT is generated once with
@@ -220,4 +233,9 @@ function buildBand(weights: Weight, rand: () => number): SymbolId[] {
 
 export const REEL_BANDS: SymbolId[][] = REEL_WEIGHTS.map((w, i) =>
   buildBand(w, mulberry32(0x9e3779b9 ^ (i * 0x85ebca6b)))
+);
+
+/** Free-spins band set (rarer scatter) — a distinct seed so the layout differs. */
+export const FREE_REEL_BANDS: SymbolId[][] = FREE_REEL_WEIGHTS.map((w, i) =>
+  buildBand(w, mulberry32(0xc2b2ae35 ^ (i * 0x27d4eb2f)))
 );

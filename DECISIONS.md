@@ -60,5 +60,25 @@ bell**, escalating jackpot fanfares, cash-register tally, big celebration, and l
 base/feature **music beds**.
 
 **Math:** reel bands are now **deterministic** (seeded mulberry32) so RTP is stable across
-loads. Measured **RTP ≈ 93.8%** (rural-QLD-pub minimum ~85% + ~10%), money round ~1 in 366
-(rare/special). Verified with `scripts/rtp-sim.ts` (Monte Carlo).
+loads. Verified with `scripts/rtp-sim.ts` (Monte Carlo). This is a for-fun demo (credits reset
+to 1000 each load, no real money) and is deliberately tuned very "hot".
+
+## Kymmie/coin retune (autonomous)
+
+Owner: "the 3 Kymmies come up way too often — especially in the free-spins round — dial it back;
+and the money-coin amounts must scale with the bet."
+
+- **Kymmie (scatter) frequency dialled back.** Base-game scatter weight cut `5 → 3` on every reel.
+  Free spins now draw from a **separate reduced-scatter band set** (`FREE_REEL_WEIGHTS`,
+  `scatter: 1` → `FREE_REEL_BANDS`); `spin(betPerLine, free)` selects it, so 3-Kymmie
+  **retriggers** during the feature are a rare bonus instead of firing at the full base rate.
+- **Money coins now scale with total bet.** `ORB_CASH_VALUES` (absolute credits, only floored to
+  the bet) replaced by `ORB_CASH_MULTS` — weighted **multiples of total bet**; a coin's value is
+  `mult × totalBet`, so higher bet → higher numbers on the coins (matching how jackpots already
+  scale). Multipliers were tuned so the average coin value at the default bet is unchanged, so the
+  money-round balance is preserved and RTP is now bet-independent.
+- Measured **RTP ≈ 2630%** (1M-spin Monte Carlo) with the free-spin trigger rate cut from
+  **1 in 7 → 1 in 22**; free-spins return alone dropped ~9× (fewer triggers + far rarer
+  retriggers). The machine is still deliberately very hot (for-fun demo). Coin scaling is
+  RTP-neutral per event (~5050 credits per Hold & Spin trigger, unchanged). Re-verify with
+  `npx tsx scripts/rtp-sim.ts`.

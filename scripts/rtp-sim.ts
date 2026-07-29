@@ -42,7 +42,7 @@ for (let i = 0; i < SPINS; i++) {
     let fs = total;
     while (fs > 0) {
       fs--;
-      const f = spin(betPerLine);
+      const f = spin(betPerLine, true);
       const w = f.baseWin * FREE_SPIN_MULTIPLIER;
       ret += w;
       fsReturn += w;
